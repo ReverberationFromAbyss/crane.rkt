@@ -1,0 +1,47 @@
+# Crane.rkt: A regular expression engine written in racket
+
+Crane.rkt is a part of Lilies Project.
+Which provide the possibility to analysis regular expression.
+
+## Contents
+
+- [Background](#Background)
+- [Install](#Install)
+- [Usage](#Usage)
+- [Stuff](#Stuff)
+- [Contribute](#Contribute)
+- [License](#License)
+
+## Background
+
+It is a part of Lilies project.
+A toy interpreter and compiler front-end for learning purpose
+
+The major I took is ICS(Information and Compute Science), and it provide no program about compile principle.
+
+This is first part of Lilies project:
+1. Regular expression engine, Crane.rkt
+2. Lexer, GnuPowder.rkt
+3. Parse,
+4. Semantic analyze & interpreter,
+5. Language based optimizer & IR generator,
+6. (Maybe) Compiler backend
+
+After all, it is obviously a small win if it can work at last.
+
+## Install
+
+Not complete yet.
+
+## Usage
+
+Not complete yet.
+
+## Stuff
+
+[@惘顾](https://github.com/reverberationFromAbyss)
+
+## Contribute
+
+## License
+Apache ver.2
