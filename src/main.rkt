@@ -97,8 +97,11 @@
                                 [else
                                  (list #f ()) ])))
                           (entry 'paths))))])
-              (if (exists (lambda (x) (car x)) result)
-                  `(:final ,result)
+              (if (or (null? result)
+                      (exists (lambda (x) (car x)) result))
+                  `(:final ,(filter (lambda (x)
+                                      (decision-mode (car x)))
+                                    result))
                   `(:cancel ,nil)))])))])
    (nfa))
   "")
