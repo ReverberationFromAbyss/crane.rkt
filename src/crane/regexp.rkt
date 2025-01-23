@@ -226,6 +226,7 @@
              'todo]
             [(:match)                      ; :match lambda
              'todo]
+            ;;
             [(:assert)                     ; :assert pattern
              'todo]
             ;;
