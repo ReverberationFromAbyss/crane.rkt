@@ -9,15 +9,14 @@
          (et_al loop)
          (et_al misc))
 
- (def transitive
+ (define transitive
    ((tuple
      ()
      ([to (lambda (v) v)]
       [predicate (lambda (v) v)])
-     (to predicate)))     ; char | predicate
-   "")
+     (to predicate))))
 
- (def entry
+ (define entry
    ((tuple
      ()
      ([id
@@ -30,12 +29,10 @@
          (if (list? v)
              v
              (raise v)))])
-     (id paths)))
-   "")
+     (id paths))))
 
  ;; records: ((status next-stage-records) ... )
-
- (def predicate
+ (define predicate
    (tuple
     (nfa-lambda decision-mode)
     ([nfa
@@ -61,7 +58,7 @@
                     (let loop ([entry (car nfa)]
                                [p (input ':pos)])
                       (if (null? (entry 'paths))
-                          nil           ; reaches end of the nfa-graph
+                          nil
                           (map
                            (lambda (path)
                              (input ': p)
@@ -89,10 +86,9 @@
                                        (decision-mode (car x)))
                                      result))
                    `(:cancel ,nil)))])))])
-    (nfa))
-   "")
+    (nfa)))
 
- (def seq-predicate
+ (define seq-predicate
    (predicate
     (lambda (patterns)
       (reverse
@@ -115,10 +111,9 @@
               (entry c (list (transitive (+ 1 c) (regexp->predicate (car e)))))
               r))]))))
     (lambda (status)
-      (eqv? ':final (car status))))
-   "")
+      (eqv? ':final (car status)))))
 
- (def anyof-predicate
+ (define anyof-predicate
    (predicate
     (lambda (patterns)
       (list
@@ -133,10 +128,9 @@
                r)))
        (entry 1 '())))
     (lambda (status)
-      (eqv? ':final (car status))))
-   "")
+      (eqv? ':final (car status)))))
 
- (def optional-predicate
+ (define optional-predicate
    (predicate
     (lambda (pattern)
       (list
@@ -147,10 +141,9 @@
          (transitive 1 Epsilon-predicate)))
        (entry 1 '())))
     (lambda (status)
-      (eqv? ':final (car status))))
-   "")
+      (eqv? ':final (car status)))))
 
- (def repeat-predicate
+ (define repeat-predicate
    (predicate
     (lambda (pattern)
       (list
@@ -159,28 +152,25 @@
                       (transitive 2 Epsilon-predicate)))
        (entry 2 ())))
     (lambda (status)
-      (eqv? ':final (car status))))
-   "")
+      (eqv? ':final (car status)))))
 
- (def char-predicate
+ (define char-predicate
    (predicate
     (lambda (pattern)
       pattern)
     (lambda (status)
-      (eqv? ':final (car status))))
-   "")
+      (eqv? ':final (car status)))))
 
- (def Epsilon-predicate
+ (define Epsilon-predicate
    ((predicate
      (lambda (pattern)
        (list
         (entry 0 '())))
      (lambda (status)
        (eqv? ':final (car status))))
-    'Epsilon)
-   "")
+    'Epsilon))
 
- (def (regexp->predicate pattern)
+ (define (regexp->predicate pattern)
    (letrec ([seq (lambda (patterns)
                    (seq-predicate patterns))]
             [anyof (lambda (patterns)
@@ -263,70 +253,66 @@
           [(Alphabetic) 'Digits]
           [(Any) 'Any])]
        [(char? pattern)
-        (char pattern)]))
-   "")
+        (char pattern)])))
 
+ ;; Debug utilities
 
- ;; Debug Utilities
+ (define display-nfa-tree
+   (lambda (predicate)
+     (letrec ([helper
+               (lambda (predicate l)
+                 (cond
+                   [(char? (predicate 'nfa))
+                    (times l (display "|\t"))
+                    (display "char: ")
+                    (display (predicate 'nfa))
+                    (display "\n")]
+                   [(symbol? (predicate 'nfa))
+                    (times l (display "|\t"))
+                    (display "symbol: ")
+                    (display (predicate 'nfa))
+                    (display "\n")]
+                   [else
+                    (let ([entries (predicate 'nfa)])
+                      (times l (display "|\t"))
+                      (display "graph:\n")
+                      (iter ([entry entries])
+                            (let ([id (entry 'id)]
+                                  [paths (entry 'paths)])
+                              (times l (display "|\t"))
+                              (display "id: ")
+                              (display id)
+                              (display ";\n")
+                              (iter ([path paths])
+                                    (let ([to (path 'to)]
+                                          [predicate (path 'predicate)])
+                                      (times l (display "|\t"))
+                                      (display "|\tto: ")
+                                      (display to)
+                                      (display ";\n")
+                                      (helper predicate (+ 1 l)))))))]))])
+       (helper predicate 0))))
 
-(def display-nfa-tree
-  (lambda (predicate)
-    (letrec ([helper
-              (lambda (predicate l)
-                (cond
-                  [(char? (predicate 'nfa))
-                   (times l (display "|\t"))
-                   (display "char: ")
-                   (display (predicate 'nfa))
-                   (display "\n")]
-                  [(symbol? (predicate 'nfa))
-                   (times l (display "|\t"))
-                   (display "symbol: ")
-                   (display (predicate 'nfa))
-                   (display "\n")]
-                  [else
-                   (let ([entries (predicate 'nfa)])
-                     (times l (display "|\t"))
-                     (display "graph:\n")
-                     (iter ([entry entries])
-                           (let ([id (entry 'id)]
-                                 [paths (entry 'paths)])
-                             (times l (display "|\t"))
-                             (display "id: ")
-                             (display id)
-                             (display ";\n")
-                             (iter ([path paths])
-                                   (let ([to (path 'to)]
-                                         [predicate (path 'predicate)])
-                                     (times l (display "|\t"))
-                                     (display "|\tto: ")
-                                     (display to)
-                                     (display ";\n")
-                                     (helper predicate (+ 1 l)))))))]))])
-      (helper predicate 0)))
-  "")
+ (define print-log
+   (lambda args
+     (for-each
+      display
+      args)))
 
-(def print-log
-  (lambda args
-    (for-each
-     display
-     args)))
-
-(def string-engine
-  (lambda (str)
-    (let ([str str]
-          [p -1])
-      (lambda args
-        (cond
-          [(eqv? 0 (length args))
-           (set! p (+ p 1))
-           (string-ref str p)]
-          [(and (eqv? 2 (length args))
-                (eqv? ': (car args))
-                (number? (cadr args)))
-           (set! p (cadr args))]
-          [(and (eqv? 1 (length args))
-                (eqv? ':pos (car args)))
-           p])))))
+ (define (string-engine str)
+   (let ([str str]
+         [p -1])
+     (lambda args
+       (cond
+         [(eqv? 0 (length args))
+          (set! p (+ p 1))
+          (string-ref str p)]
+         [(and (eqv? 2 (length args))
+               (eqv? ': (car args))
+               (number? (cadr args)))
+          (set! p (cadr args))]
+         [(and (eqv? 1 (length args))
+               (eqv? ':pos (car args)))
+          p]))))
 
  )
