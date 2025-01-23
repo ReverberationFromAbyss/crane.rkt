@@ -64,41 +64,42 @@
            [(symbol? nfa)
             (case nfa
               [(Epsilon)
-               (list `(:final ,nil) nil)])]
+               `(:final ,nil)])]
            [(char? nfa)
             (let ([e (input)])
               (if (eqv? nfa e)
-                  (list `(:final ,(list e)) nil)
-                  (list `(:cancel ,(list e)) nil)))]
+                  `(:final ,(list e))
+                  `(:cancel ,(list e))))]
            [else
-            (let loop ([entry (car nfa)]
-                       [p (input ':pos)])
-              (if (null? (entry 'paths))
-                  (list `(:final ()))
-                  (let ([result
-                         (filter
-                          (lambda (x) x)
-                          (map
-                           (lambda (path)
-                             (input ': p)
-                             (let* ([predicate (path 'predicate)]
-                                    [nfa-traversal (predicate 'nfa-traversal)]
-                                    [to (car
-                                         (memp
-                                          (lambda (x)
-                                            (eqv? (x 'id) (path 'to)))
-                                          nfa))]
-                                    [r (nfa-traversal input)]
-                                    [next-stages (loop to (input ':pos))])
-                               (if (and (decision-mode (car r))
-                                        (for-all decision-mode next-stages))
-                                   (list r next-stages)
-                                   #f)))
-                           (entry 'paths)))])
-                    (print-log result "\n")
-                    (if (not (null? result))
-                        (list `(:final ,result))
-                        (list `(:cancel ,result))))))])))])
+            (let ([result
+                   (let loop ([entry (car nfa)]
+                              [p (input ':pos)])
+                     (if (null? (entry 'paths))
+                         nil
+                         (map
+                          (lambda (path)
+                            (input ': p)
+                            (let* ([predicate (path 'predicate)]
+                                   [nfa-traversal (predicate 'nfa-traversal)]
+                                   [to (car
+                                        (memp
+                                         (lambda (x)
+                                           (eqv? (x 'id) (path 'to)))
+                                         nfa))]
+                                   [r (nfa-traversal input)]
+                                   [n (loop to (input ':pos))])
+                              (cond
+                                [(null? n)
+                                 (list r n)]
+                                [(and (decision-mode r)
+                                      (exists (lambda (x) (decision-mode (car x)))  n))
+                                 (list r (filter (lambda (x) (decision-mode (car x))) n))]
+                                [else
+                                 (list #f ()) ])))
+                          (entry 'paths))))])
+              (if (exists (lambda (x) (car x)) result)
+                  `(:final ,result)
+                  `(:cancel ,nil)))])))])
    (nfa))
   "")
 
@@ -317,14 +318,3 @@
     (for-each
      display
      args)))
-
-(def v ((regexp->predicate '(:seq (:anyof #\1 #\2 #\3) (:anyof #\1 #\2 #\3))) 'nfa-traversal))
-(def f (string-engine "123"))
-
-;; records: ((status next-stage-records) ... )
-
-;; {:final {{{:final {#\1}}                ; status
-;;           {:final
-;;            {{{:final {#\2}}             ; status
-;;              {:final ()}}}}             ; next-stage
-;;           }}}
